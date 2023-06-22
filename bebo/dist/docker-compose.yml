@@ -1,0 +1,38 @@
+version: '3'
+
+volumes:
+  bot-storage:
+  server-storage:
+
+services:
+  bebo-bot:
+    read_only: true
+    build: ./bot
+    restart: unless-stopped
+    volumes:
+      - bot-storage:/app/storage
+    environment:
+      - BOT_SERVER_HOST=bebo-server
+      - BOT_SERVER_PORT=10050
+      - BOT_WORKERS=32
+    depends_on:
+      - bebo-server
+    links:
+      - bebo-server
+  bebo-server:
+    read_only: true
+    tmpfs:
+      - /tmp
+    build: ./server
+    user: root
+    restart: unless-stopped
+    volumes:
+      - server-storage:/app/storage
+      - /traffic/pcaps:/traffic:rw
+    environment:
+      - SERVER_BIND_HOST=0.0.0.0
+      - SERVER_BIND_PORT=10050
+      - SERVER_WORKERS=1
+      - SERVER_THROTTLE_RPS=10
+    ports:
+      - '0.0.0.0:10050:10050'

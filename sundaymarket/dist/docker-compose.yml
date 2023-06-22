@@ -1,0 +1,69 @@
+version: '3.8'
+  
+services:
+  sundaymarket-database:
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: database/
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_DB: sundaymarket
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres-volume:/run
+
+  sundaymarket-proxy:
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: proxy
+    ports:
+      - 10070:8080
+    depends_on:
+      - sundaymarket-frontend
+      - sundaymarket-backend-node
+    user: root
+    volumes:
+      - /traffic/pcaps:/traffic:rw
+
+  sundaymarket-backend-node:
+    restart: always
+    build:
+      dockerfile: docker/Dockerfile
+      context: backend-node/
+    environment:
+      DB_HOST: sundaymarket-database
+      DB_PORT: 5432
+      DB_NAME: sundaymarket
+      DB_USER: postgres
+      DB_PASSWORD: password
+    depends_on:
+      - sundaymarket-database
+
+  sundaymarket-backend-rust:
+    restart: always
+    build:
+      dockerfile: docker/Dockerfile
+      context: backend-rust/
+    environment:
+      DATABASE_URL: postgres://postgres:password@sundaymarket-database/sundaymarket
+      RUST_LOG: info
+    depends_on:
+      - sundaymarket-database
+    volumes:
+      - passport-volume:/app/data
+
+  sundaymarket-frontend:
+    restart: always
+    build:
+      dockerfile: docker/Dockerfile
+      context: frontend/
+
+volumes:
+  passport-volume:
+  postgres-volume:
+  proxy-cache:
+  proxy-log:
+  proxy-run:

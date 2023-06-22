@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  turbine:
+    build: .
+    user: root
+    network_mode: host
+    restart: always
+    ports:
+      - 10060:10060
+    volumes:
+      - /traffic/pcaps:/traffic:rw
+      - data:/data
+
+volumes:
+  data:
+

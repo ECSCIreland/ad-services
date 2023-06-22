@@ -1,0 +1,18 @@
+:8080
+log
+
+reverse_proxy sundaymarket-frontend:8080
+
+reverse_proxy /offer sundaymarket-backend-node:8080
+reverse_proxy /offer/* sundaymarket-backend-node:8080
+
+reverse_proxy /profile sundaymarket-backend-node:8080
+reverse_proxy /profile/* sundaymarket-backend-node:8080
+
+reverse_proxy /request sundaymarket-backend-node:8080
+reverse_proxy /request/* sundaymarket-backend-node:8080
+
+handle_path /auth/* {
+	rewrite * /api/auth{path}
+	reverse_proxy sundaymarket-backend-rust:3030
+}

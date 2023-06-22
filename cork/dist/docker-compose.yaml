@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  cork-web:
+    restart: always
+    build: web
+#    network_mode: host
+    user: root
+    ports:
+      - "10010:8080"
+    environment:
+      # TODO Change the base url to wherever the service is hosted at (do not include a slash at the end!)
+      BASEURL: "http://localhost:10010"
+      # TODO Change the report all url to the url where the report app for the service is hosted at (do not include a slash at the end!)
+      REPORT_APP_URL: "http://localhost:11111"
+      DB_HOST: cork-db
+      DB_USER: user
+      DB_PASSWORD: SuperStrongSecretPassword
+      DB_NAME: recyclingplant
+      ANALYSIS_FILE_TMPFOLDER: /var/lib/recycling_plant
+    command: bash -c "while !</dev/tcp/cork-db/5432; do sleep 1; done; /entrypoint.sh"
+    volumes:
+      - cork-processing-storage:/var/lib/recycling_plant:rw
+      - /traffic/pcaps:/traffic:rw
+    depends_on:
+      - cork-db
+    read_only: true
+    tmpfs: /tmp
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  cork-db:
+    build: db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: SuperStrongSecretPassword
+      POSTGRES_DB: recyclingplant
+      PGDATA: /var/lib/postgresql/data/pgdata
+    expose:
+      - 5432
+    volumes:
+      - cork-postgres-data:/var/lib/postgresql/data/pgdata
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  cork-postgres-data:
+  cork-processing-storage:
+
